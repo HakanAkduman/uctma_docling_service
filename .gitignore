@@ -1,0 +1,11 @@
+# Ortam dosyaları gizli bilgi içerebilir; şablon takip edilir.
+.env
+.env.*
+!.env.example
+
+__pycache__/
+*.pyc
+
+# Yerel model önbelleği ve geçici yüklemeler
+models_cache/
+uploads/

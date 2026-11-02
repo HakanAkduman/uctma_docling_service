@@ -1,0 +1,28 @@
+# Bağımsız çalışma: yalnızca HTTP API (RabbitMQ gerekmez).
+#   docker compose --env-file .env up -d --build
+#
+# RabbitMQ consumer ile (UCTMA backend entegrasyonu) çalıştırmak için ek dosya:
+#   docker compose -f docker-compose.yml -f docker-compose.rabbitmq.yml up -d --build
+services:
+  docling_converter_service:
+    build: .
+    container_name: docling_converter_service
+    restart: unless-stopped
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${API_PORT:-8000}:8000"
+    volumes:
+      - docling_models:/app/models_cache
+    environment:
+      - PYTHONUNBUFFERED=1
+      - HF_HOME=/app/models_cache
+      - XDG_CACHE_HOME=/app/models_cache
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  docling_models:
+    name: docling_converter_service_docling_models

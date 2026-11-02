@@ -1,0 +1,34 @@
+# OPSİYONEL: RabbitMQ consumer'ı etkinleştirir ve UCTMA ağına bağlar.
+# Bağımsız kullanım için GEREKMEZ; start.sh bu dosyayı kullanmaz.
+#
+#   docker compose --env-file .env -f docker-compose.yml -f docker-compose.rabbitmq.yml up -d --build
+#
+# Gereksinimler: "uctma_default" Docker ağı (UCTMA backend compose'u oluşturur),
+# erişilebilir bir RabbitMQ ve .env içinde en az 32 karakterlik CALLBACK_SHARED_SECRET.
+services:
+  docling_converter_service:
+    volumes:
+      - uploads:/uploads
+    environment:
+      - ENABLE_CONSUMER=true
+      - RABBITMQ_HEARTBEAT_SECONDS=${RABBITMQ_HEARTBEAT_SECONDS:-600}
+      - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
+      - RABBITMQ_PORT=${RABBITMQ_PORT:-5672}
+      - RABBITMQ_USER=${RABBITMQ_USER:-guest}
+      - RABBITMQ_PASS=${RABBITMQ_PASS:-guest}
+      - RABBITMQ_QUEUE_FILE=${RABBITMQ_QUEUE_FILE:-file_processing_queue}
+      - RABBITMQ_EXCHANGE_FILE=${RABBITMQ_EXCHANGE_FILE:-file_processing_exchange}
+      - RABBITMQ_ROUTING_KEY_FILE=${RABBITMQ_ROUTING_KEY_FILE:-file_processing_routing_key}
+      - BACKEND_CALLBACK_URL=${BACKEND_CALLBACK_URL:-http://rag-platform-backend:8080/uctma/api/file/callback}
+      - CALLBACK_SHARED_SECRET=${CALLBACK_SHARED_SECRET}
+    networks:
+      - default
+
+volumes:
+  uploads:
+    name: uctma_uploads
+
+networks:
+  default:
+    external: true
+    name: uctma_default

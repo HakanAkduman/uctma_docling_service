@@ -1,0 +1,14 @@
+fastapi==0.115.0
+uvicorn==0.30.6
+python-multipart==0.0.9
+docling-slim[standard,format-video]==2.139.0
+transformers>=4.42.0,<6.0.0
+pandas==2.2.2
+openpyxl==3.1.5
+pika>=1.3.2
+requests>=2.31.0
+psycopg2-binary>=2.9.9
+sqlalchemy>=2.0.28
+pydantic>=2.6.4
+python-dotenv>=1.0.1
+tree-sitter>=0.21.0
