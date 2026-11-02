@@ -75,6 +75,10 @@ curl -X POST http://127.0.0.1:8000/convert \
   -F "file=@rapor.pdf"
 ```
 
+| Parametre | Tür | Varsayılan | Açıklama |
+| --- | --- | --- | --- |
+| `downloadable` | query, `true`/`false` | `false` | `true` ise JSON yerine Markdown dosyası (`rapor.md`) indirilir |
+
 Cevap:
 
 ```json
@@ -84,6 +88,15 @@ Cevap:
 }
 ```
 
+Dosya olarak indirmek için:
+
+```sh
+curl -X POST "http://127.0.0.1:8000/convert?downloadable=true" \
+  -F "file=@rapor.pdf" -OJ
+```
+
+`-OJ`, dosyayı sunucunun önerdiği adla (`rapor.md`) kaydeder.
+
 ### `POST /convert-and-chunk`
 
 Dosyayı Markdown'a dönüştürür ve Docling `HybridChunker` ile chunk'lara böler.
@@ -91,6 +104,7 @@ Dosyayı Markdown'a dönüştürür ve Docling `HybridChunker` ile chunk'lara b�
 | Parametre | Tür | Varsayılan | Açıklama |
 | --- | --- | --- | --- |
 | `max_tokens` | query, `1`–`10000` | `400` | Her chunk için en fazla token sayısı |
+| `downloadable` | query, `true`/`false` | `false` | `true` ise JSON yerine zip dosyası (`rapor.zip`) indirilir |
 
 ```sh
 curl -X POST "http://127.0.0.1:8000/convert-and-chunk?max_tokens=300" \
@@ -110,6 +124,24 @@ Cevap:
 }
 ```
 
+`downloadable=true` verilirse cevap JSON yerine zip olur:
+
+```sh
+curl -X POST "http://127.0.0.1:8000/convert-and-chunk?downloadable=true&max_tokens=300" \
+  -F "file=@rapor.pdf" -OJ
+```
+
+```
+rapor.zip
+├── rapor.md                # tüm Markdown çıktısı
+└── chunks/
+    ├── chunk_001.txt       # her chunk ayrı bir .txt dosyası
+    ├── chunk_002.txt
+    └── ...
+```
+
+Zip içinde yalnızca chunk metinleri bulunur; `pageNumbers` bilgisi için JSON cevabını kullanın.
+
 `pageNumbers`, sayfalı belgelerde (PDF vb.) chunk'ın geçtiği sayfaları verir; ses, video ve düz metinde boş liste olabilir.
 
 ### Hata cevapları
@@ -117,8 +149,10 @@ Cevap:
 | Kod | Durum |
 | --- | --- |
 | `400` | Dosya adı yok veya uzantı desteklenmiyor |
-| `422` | `max_tokens` aralık dışı veya `file` alanı eksik |
+| `422` | `max_tokens` aralık dışı, `downloadable` geçersiz veya `file` alanı eksik |
 | `500` | Dönüştürme sırasında hata (`detail` alanında açıklama) |
+
+Hatalar `downloadable=true` iken de JSON olarak döner.
 
 ### Python örneği
 
@@ -136,6 +170,19 @@ res.raise_for_status()
 data = res.json()
 print(data["convertedText"][:200])
 print(len(data["chunks"]), "chunk")
+```
+
+Dosya olarak indirme (Python):
+
+```python
+res = requests.post(
+    "http://127.0.0.1:8000/convert-and-chunk",
+    params={"downloadable": "true"},
+    files={"file": ("rapor.pdf", open("rapor.pdf", "rb"))},
+    timeout=600,
+)
+res.raise_for_status()
+open("rapor.zip", "wb").write(res.content)
 ```
 
 > Büyük PDF'ler, ses ve video dosyaları dakikalar sürebilir; istemci tarafında yüksek bir timeout kullanın.
